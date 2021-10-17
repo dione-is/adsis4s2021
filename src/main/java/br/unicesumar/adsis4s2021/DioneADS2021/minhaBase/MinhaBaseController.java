@@ -4,6 +4,8 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -15,11 +17,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 public class MinhaBaseController<ENTITY extends MinhaBaseEntity, REPO extends JpaRepository<ENTITY, String>> {
 	@Autowired
 	private REPO repo;
-	
+
 	@DeleteMapping("/{id}")
-		public void deletePeloId(@PathVariable("id") String id) {
-			repo.deleteById(id);
-		}
+	public void deletePeloId(@PathVariable("id") String id) {
+		repo.deleteById(id);
+	}
 	
 	@GetMapping("/{id}")
 	public ENTITY getPeloId(@PathVariable("id") String id) {
@@ -27,28 +29,30 @@ public class MinhaBaseController<ENTITY extends MinhaBaseEntity, REPO extends Jp
 	}
 	
 	@GetMapping
-	public List<ENTITY> getAll(){
+	public List<ENTITY> getAll() {
 		return repo.findAll();
 	}
 	
 	@PostMapping
-	public String post(@RequestBody ENTITY novo) {
-		if(repo.findById(novo.getId()).isPresent()) {
-			throw new RuntimeException("Seu registro ja existe, faca um put para atualizar");
+	//@ResponseStatus(value = HttpStatus.CREATED)
+	public ResponseEntity<String> post(@RequestBody ENTITY novo) {
+		if (novo.getId() != null && repo.findById(novo.getId()).isPresent()) {
+			//throw new RuntimeException("Seu registro já existe, faça um put ao invés de post!");
+			return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("Seu registro já existe, faça um put ao invés de post!");
 		}
 		novo = repo.save(novo);
-		return novo.getId();
+		return ResponseEntity.status(HttpStatus.CREATED).body(novo.getId());
 	}
 	
 	@PutMapping("/{id}")
 	public String put(@RequestBody ENTITY modificado, @PathVariable("id") String id) {
 		if (!modificado.getId().equals(id)) {
-			throw new RuntimeException("Para atualizar um registro, os IDs do request devem ser iguais!");
+			throw new RuntimeException("Para atualizar um registro, os Strings do request devem ser iguais!");
 		}
 		if (!repo.findById(id).isPresent()) {
 			throw new RuntimeException("Seu registro não existe, faça um post ao invés de put!");
 		}
 		modificado = repo.save(modificado);
 		return modificado.getId();
-	}
+	}	
 }
